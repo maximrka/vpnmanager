@@ -1,0 +1,7 @@
+*.DS_Store
+web/var/*.sqlite
+web/var/*.db
+web/var/*.log
+web/var/qr/*
+web/.env
+web/.env.local

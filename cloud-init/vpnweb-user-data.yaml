@@ -1,0 +1,54 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+package_reboot_if_required: false
+
+packages:
+  - git
+  - curl
+  - ca-certificates
+  - openssl
+
+write_files:
+  - path: /root/vpnweb-bootstrap.sh
+    permissions: '0700'
+    owner: root:root
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+
+      export DEBIAN_FRONTEND=noninteractive
+
+      # Change these if needed before launch (or template them in provider UI).
+      VPNWEB_REPO="https://github.com/maximrka/vpnmanager.git"
+      VPNWEB_REF="main"
+      VPNWEB_BACKEND="wireguard"  # wireguard | openvpn
+
+      workdir="/root/vpnmanager"
+      rm -rf "${workdir}"
+      git clone --depth=1 --branch "${VPNWEB_REF}" "${VPNWEB_REPO}" "${workdir}"
+      cd "${workdir}"
+
+      # Run installer non-interactively by piping backend choice.
+      if [[ "${VPNWEB_BACKEND}" == "wireguard" ]]; then
+        printf '1\n' | ./install.sh
+      elif [[ "${VPNWEB_BACKEND}" == "openvpn" ]]; then
+        printf '2\n' | ./install.sh
+      else
+        echo "Invalid VPNWEB_BACKEND: ${VPNWEB_BACKEND}" >&2
+        exit 2
+      fi
+
+      echo "=== VPNWEB BOOTSTRAP DONE ==="
+      if [[ -f /root/vpnweb-initial-admin.txt ]]; then
+        cat /root/vpnweb-initial-admin.txt
+      fi
+      if [[ -f /etc/vpnweb-network-summary ]]; then
+        echo "---"
+        cat /etc/vpnweb-network-summary
+      fi
+
+runcmd:
+  - [ bash, -lc, "/root/vpnweb-bootstrap.sh > /var/log/vpnweb-bootstrap.log 2>&1" ]
+
+final_message: "cloud-init finished. See /var/log/vpnweb-bootstrap.log"
