@@ -27,11 +27,21 @@ detect_endpoint_host() {
     return
   fi
 
+  local detected
+  detected="$(curl -4fsS --max-time 5 https://api64.ipify.org 2>/dev/null || true)"
+  if [[ -n "${detected}" ]]; then
+    echo "${detected}"
+    return
+  fi
+
   local wan
   wan="$(ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="dev") {print $(i+1); exit}}')"
   if [[ -n "${wan}" ]]; then
-    ip -o -4 addr show dev "${wan}" scope global 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | head -n1
-    return
+    detected="$(ip -o -4 addr show dev "${wan}" scope global 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | head -n1)"
+    if [[ -n "${detected}" ]]; then
+      echo "${detected}"
+      return
+    fi
   fi
 
   echo "REPLACE_WITH_SERVER_IP"
@@ -146,9 +156,8 @@ SUDOERS
 }
 
 initialize_wireguard() {
-  local private_key public_key endpoint_host iface_addr wan port ipv6_enabled
+  local private_key public_key iface_addr wan port ipv6_enabled
 
-  endpoint_host="$(detect_endpoint_host)"
   wan="$(detect_wan_iface)"
   port="${WG_PORT:-51820}"
   ipv6_enabled="$(ipv6_mode)"

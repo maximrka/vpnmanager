@@ -4,6 +4,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y \
     apache2 \
+    curl \
     iproute2 \
     iptables \
     libapache2-mod-php \

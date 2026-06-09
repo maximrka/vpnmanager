@@ -13,7 +13,7 @@ Current design:
 - one container
 - Apache + PHP + SQLite inside the container
 - WireGuard inside the same container
-- `network_mode: host`
+- Docker bridge networking with published ports
 - persistent volumes for `/etc/wireguard` and `/opt/vpnweb/var`
 
 Quick start:
@@ -21,7 +21,7 @@ Quick start:
 ```bash
 cd docker/wireguard
 docker compose build
-WG_HOST=your.public.ip.or.domain docker compose up -d
+docker compose up -d
 docker logs vpnmanager-wg
 ```
 
@@ -32,9 +32,9 @@ By default:
 
 Useful environment variables:
 
-- `WG_HOST` - public IP or DNS placed into generated client configs
+- `WG_HOST` - optional public IP or DNS placed into generated client configs
 - `WG_PORT` - WireGuard UDP port
-- `APACHE_PORT` - web panel port inside host network mode
+- `APACHE_PORT` - web panel port inside the container; keep it aligned with `ports:`
 - `WG_ENABLE_IPV6` - `auto`, `1`, or `0`
 - `ADMIN_PASSWORD` - optional fixed initial admin password
 - `APP_NAME` - panel title
@@ -46,14 +46,15 @@ Requirements:
 - Linux host with Docker and Compose plugin
 - `/dev/net/tun` available on host
 - host kernel with WireGuard support
-- host firewall allowing chosen panel port and `51820/udp`
+- host firewall allowing `8080/tcp` and `51820/udp`
 
 Current limitations:
 
 - WireGuard only, no OpenVPN in this Docker mode yet
-- designed around `network_mode: host`, not bridge mode
+- IPv6 in Docker mode depends on Docker host/network support and may need extra tuning
 - first start initializes the database and admin user automatically
 - if you change core network settings later, the easiest path is recreating the container with persisted volumes kept intentionally
+- auto-detection of public IP tries an external lookup first; if it is wrong, set `WG_HOST` manually in `docker-compose.yml`
 
 Reset admin password inside container:
 
