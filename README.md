@@ -35,8 +35,8 @@ Installer will:
 After install:
 
 - Panel URL: `http://<server-ip>/`
-- Default user: `admin`
-- Default password: random 10-15 chars (generated during install)
+- Username: `admin`
+- Password: random 10-15 chars (generated during install)
 
 Generated credentials are also saved to `/root/vpnweb-initial-admin.txt`.
 Installer also prints network summary and saves it to `/etc/vpnweb-network-summary`.
@@ -107,8 +107,9 @@ sudo /opt/vpnweb/bin/vpnweb-admin-passwd "MyNewStrongPass123!"
 
 ## Important Notes
 
-1. Generated client configs currently contain `REPLACE_WITH_SERVER_IP`.
-   Replace it with your public server IP or DNS before connecting.
+1. Generated client configs try to auto-detect the server public IPv4.
+   If auto-detection is wrong, set your public IP or DNS manually in `/opt/vpnweb/.env`
+   via `VPNWEB_ENDPOINT_HOST=your.host.or.ip` and rerun `sudo ./update.sh`.
 2. The panel executes privileged actions only via `/opt/vpnweb/bin/vpnctl`.
 3. Do not broaden sudoers beyond the provided command path.
 
@@ -163,6 +164,16 @@ sudo ./update.sh
 
 `update.sh` refreshes web code, helper scripts, DB migration checks, permissions, and restarts Apache without full VPN reinstall.
 
+## Experimental Docker Mode
+
+An isolated WireGuard-only Docker prototype lives in:
+
+- `docker/wireguard/`
+
+This is being developed separately from the main bare-metal installer flow.
+It is intended for host-network deployments where Apache, PHP, SQLite, and
+WireGuard run inside a single container.
+
 ## Current Status
 
 Implemented and testable in current codebase:
@@ -176,6 +187,5 @@ Implemented and testable in current codebase:
 Still recommended before production rollout:
 
 - End-to-end validation on fresh VMs for all supported OS versions
-- Automatic server IP/DNS injection into generated client configs
 - Optional hardening pass (rate limiting, stricter headers, HTTPS defaults)
 # vpnmanager

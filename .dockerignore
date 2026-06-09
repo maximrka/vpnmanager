@@ -1,0 +1,6 @@
+.git
+.agents
+.codex
+*.DS_Store
+cloud-init/
+web/var/

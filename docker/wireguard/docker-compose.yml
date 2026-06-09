@@ -1,0 +1,32 @@
+services:
+  vpnmanager-wg:
+    build:
+      context: ../..
+      dockerfile: docker/wireguard/Dockerfile
+    container_name: vpnmanager-wg
+    restart: unless-stopped
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      APACHE_PORT: "8080"
+      WG_PORT: "51820"
+      WG_HOST: ""
+      WG_ENABLE_IPV6: "auto"
+      ADMIN_PASSWORD: ""
+      APP_NAME: "VPN Web Panel"
+      APP_LOGO_TEXT: "VPNWEB"
+      TOTP_ISSUER: "VPN Web Panel"
+    volumes:
+      - wg_config:/etc/wireguard
+      - app_var:/opt/vpnweb/var
+      - /lib/modules:/lib/modules:ro
+    sysctls:
+      net.ipv4.conf.all.src_valid_mark: "1"
+
+volumes:
+  wg_config:
+  app_var:
