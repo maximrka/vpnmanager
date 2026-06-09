@@ -218,6 +218,7 @@ final class App
         $secret = (string)$_SESSION['2fa_setup_secret'];
         $otpauth = $this->totp->otpauthUrl($issuer, $username, $secret);
         $qrData = $this->qrDataUri($otpauth);
+        $secretFormatted = trim((string)preg_replace('/(.{4})/', '$1 ', $secret));
 
         View::render('profile', [
             'appName' => $this->config->get('APP_NAME', 'VPN Web Panel'),
@@ -225,6 +226,7 @@ final class App
             'username' => $username,
             'otpauth' => $otpauth,
             'secret' => $secret,
+            'secretFormatted' => $secretFormatted,
             'qrData' => $qrData,
             'enabled' => $enabled,
             'csrf' => Csrf::token(),

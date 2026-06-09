@@ -26,7 +26,10 @@
         <?php if (!empty($qrData)): ?>
           <img src="<?= htmlspecialchars((string)$qrData) ?>" alt="TOTP QR" style="max-width:220px;border:1px solid #dce4ef;border-radius:8px;padding:8px;background:#fff;">
         <?php endif; ?>
-        <p><strong>Manual key:</strong> <code><?= htmlspecialchars($secret) ?></code></p>
+        <div class="totp-manual-key">
+          <span class="totp-manual-key__label">Manual key</span>
+          <code class="totp-manual-key__value"><?= htmlspecialchars((string)($secretFormatted ?? $secret)) ?></code>
+        </div>
         <form method="post" action="/?r=profile-2fa-enable">
           <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf) ?>">
           <label>Current TOTP code</label>
