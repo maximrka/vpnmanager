@@ -92,7 +92,7 @@ APACHE
 }
 
 initialize_web() {
-  local app_secret admin_password endpoint_host ipv6_enabled
+  local app_secret admin_password endpoint_host ipv6_enabled wg_port
 
   mkdir -p "${VAR_DIR}" "${QR_DIR}" /etc/wireguard/clients /opt/vpnweb/bin
   chown -R www-data:www-data "${VAR_DIR}"
@@ -107,6 +107,7 @@ initialize_web() {
 
   endpoint_host="$(detect_endpoint_host)"
   ipv6_enabled="$(ipv6_mode)"
+  wg_port="${WG_PORT:-51820}"
 
   cat > "${ENV_PATH}" <<ENV
 APP_ENV=production
@@ -118,6 +119,7 @@ QR_DIR=${QR_DIR}
 TOTP_ISSUER=${TOTP_ISSUER:-VPN Web Panel}
 APP_SECRET=${app_secret}
 VPNWEB_ENDPOINT_HOST=${endpoint_host}
+WG_PORT=${wg_port}
 WG_ENABLE_IPV6=${ipv6_enabled}
 ENV
 

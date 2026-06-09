@@ -116,7 +116,7 @@ wg_create_client() {
     exit 5
   fi
 
-  local c_priv c_pub psk addr addr6 server_pub endpoint_host peer_allowed iface_addr
+  local c_priv c_pub psk addr addr6 server_pub endpoint_host peer_allowed iface_addr wg_port
   c_priv="$(wg genkey)"
   c_pub="$(printf '%s' "${c_priv}" | wg pubkey)"
   psk="$(wg genpsk)"
@@ -127,6 +127,10 @@ wg_create_client() {
   fi
   server_pub="$(wg_server_pubkey)"
   endpoint_host="$(detect_endpoint_host)"
+  wg_port="$(config_get WG_PORT)"
+  if [[ -z "${wg_port}" ]]; then
+    wg_port="51820"
+  fi
   iface_addr="${addr}"
   peer_allowed="${addr}"
   if [[ -n "${addr6}" ]]; then
@@ -144,7 +148,7 @@ DNS = 1.1.1.1
 [Peer]
 PublicKey = ${server_pub}
 PresharedKey = ${psk}
-Endpoint = ${endpoint_host}:$(config_get WG_PORT)
+Endpoint = ${endpoint_host}:${wg_port}
 AllowedIPs = 0.0.0.0/0, ::/0
 PersistentKeepalive = 25
 CFG
