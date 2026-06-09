@@ -84,6 +84,30 @@ button.alt { background: #edf3fb; color: var(--text); }
   font-weight: 600;
 }
 .footer-note a:hover { text-decoration: underline; }
+.totp-manual-key {
+  margin: 12px 0 14px;
+}
+.totp-manual-key__label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 700;
+  color: var(--text);
+}
+.totp-manual-key__value {
+  display: inline-block;
+  max-width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #f7faff;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.7;
+  white-space: normal;
+  word-break: break-word;
+}
 @media (max-width: 720px) {
   .topbar { flex-direction: column; align-items: flex-start; gap: 10px; }
   .nav a { margin: 0 12px 0 0; }
