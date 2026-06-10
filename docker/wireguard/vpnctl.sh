@@ -6,7 +6,7 @@ WG_CONF="/etc/wireguard/wg0.conf"
 CLIENTS_DIR="/etc/wireguard/clients"
 
 usage() {
-  echo "Usage: $0 <status|start|stop|restart|create-client|delete-client|disable-client|enable-client|get-config> <wireguard> [name]"
+  echo "Usage: $0 <status|start|stop|restart|create-client|delete-client|disable-client|enable-client|get-config|session-stats> <wireguard> [name]"
   exit 1
 }
 
@@ -243,6 +243,54 @@ PEER
   echo "OK"
 }
 
+wg_session_stats() {
+  mkdir -p "${CLIENTS_DIR}"
+  local now
+  now="$(date +%s)"
+  local dump
+  dump="$(wg show wg0 dump 2>/dev/null || true)"
+
+  shopt -s nullglob
+  local conf
+  for conf in "${CLIENTS_DIR}"/*.conf; do
+    local name c_priv c_pub line endpoint hs rx tx age state last_seen
+    name="$(basename "${conf}" .conf)"
+    c_priv="$(awk -F' = ' '/^PrivateKey = /{print $2; exit}' "${conf}")"
+    [[ -n "${c_priv}" ]] || continue
+    c_pub="$(printf '%s' "${c_priv}" | wg pubkey)"
+    line="$(printf '%s\n' "${dump}" | awk -F'\t' -v pub="${c_pub}" '$1==pub {print; exit}')"
+
+    if [[ -z "${line}" ]]; then
+      printf '%s|offline|0|0||\n' "${name}"
+      continue
+    fi
+
+    endpoint="$(printf '%s' "${line}" | awk -F'\t' '{print $3}')"
+    hs="$(printf '%s' "${line}" | awk -F'\t' '{print $5}')"
+    rx="$(printf '%s' "${line}" | awk -F'\t' '{print $6}')"
+    tx="$(printf '%s' "${line}" | awk -F'\t' '{print $7}')"
+    last_seen=""
+    state="idle"
+
+    if [[ "${hs}" =~ ^[0-9]+$ ]] && [[ "${hs}" -gt 0 ]]; then
+      age=$(( now - hs ))
+      if [[ "${age}" -le 180 ]]; then
+        state="online"
+      else
+        state="seen"
+      fi
+      last_seen="$(date -d "@${hs}" '+%Y-%m-%d %H:%M:%S' 2>/dev/null || true)"
+    fi
+
+    if [[ "${endpoint}" == "(none)" ]]; then
+      endpoint=""
+    fi
+
+    printf '%s|%s|%s|%s|%s|%s\n' "${name}" "${state}" "${rx:-0}" "${tx:-0}" "${last_seen}" "${endpoint}"
+  done
+  shopt -u nullglob
+}
+
 case "${cmd}" in
   status)
     if ip link show wg0 >/dev/null 2>&1; then
@@ -280,6 +328,9 @@ case "${cmd}" in
   get-config)
     [[ -n "${arg3}" ]] || usage
     wg_get_config "${arg3}"
+    ;;
+  session-stats)
+    wg_session_stats
     ;;
   *)
     usage

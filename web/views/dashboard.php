@@ -7,6 +7,20 @@
   <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
+  <?php
+    $formatBytes = static function ($bytes): string {
+        $value = (int)$bytes;
+        if ($value <= 0) {
+            return '0 B';
+        }
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        $power = (int)floor(log($value, 1024));
+        $power = max(0, min($power, count($units) - 1));
+        $scaled = $value / (1024 ** $power);
+        $precision = $power === 0 ? 0 : 2;
+        return number_format($scaled, $precision, '.', ' ') . ' ' . $units[$power];
+    };
+  ?>
   <div class="layout">
     <?php include __DIR__ . '/_layout_top.php'; ?>
 
@@ -38,9 +52,10 @@
 
       <div class="card">
         <h3>Clients</h3>
+        <div class="table-wrap">
         <table class="table">
           <thead>
-            <tr><th>ID</th><th>Name</th><th>Internal IP</th><th>Status</th><th>Created</th><th>Actions</th></tr>
+            <tr><th>ID</th><th>Name</th><th>Internal IP</th><th>Status</th><th>Session</th><th>Last Seen</th><th>Traffic</th><th>Endpoint</th><th>Created</th><th>Actions</th></tr>
           </thead>
           <tbody>
             <?php foreach ($clients as $c): ?>
@@ -49,6 +64,13 @@
                 <td><?= htmlspecialchars($c['client_name']) ?></td>
                 <td><?= htmlspecialchars((string)($c['assigned_ip'] ?? '')) ?></td>
                 <td><span class="badge <?= $c['status'] === 'active' ? 'active' : 'disabled' ?>"><?= htmlspecialchars($c['status']) ?></span></td>
+                <td><span class="badge badge-session badge-session--<?= htmlspecialchars((string)($c['session_state'] ?? 'offline')) ?>"><?= htmlspecialchars((string)($c['session_state'] ?? 'offline')) ?></span></td>
+                <td><?= htmlspecialchars((string)($c['last_seen'] !== '' ? $c['last_seen'] : '-')) ?></td>
+                <td class="traffic-cell">
+                  <div>Down: <strong><?= htmlspecialchars($formatBytes($c['rx_bytes'] ?? 0)) ?></strong></div>
+                  <div>Up: <strong><?= htmlspecialchars($formatBytes($c['tx_bytes'] ?? 0)) ?></strong></div>
+                </td>
+                <td class="endpoint-cell"><?= htmlspecialchars((string)($c['endpoint'] !== '' ? $c['endpoint'] : '-')) ?></td>
                 <td><?= htmlspecialchars($c['created_at']) ?></td>
                 <td>
                   <a href="/?r=clients-download&id=<?= (int)$c['id'] ?>">Download</a>
@@ -71,6 +93,7 @@
             <?php endforeach; ?>
           </tbody>
         </table>
+        </div>
       </div>
 
       <?php if (!empty($selectedQr)): ?>
