@@ -27,6 +27,13 @@
         }
         return str_replace(',', ', ', $value);
     };
+    $formatDate = static function (?string $value): string {
+        $value = trim((string)$value);
+        if ($value === '') {
+            return '-';
+        }
+        return str_replace(' ', "\n", $value);
+    };
   ?>
   <div class="layout">
     <?php include __DIR__ . '/_layout_top.php'; ?>
@@ -36,7 +43,7 @@
         <div class="card">
           <h3>Backend</h3>
           <p>Selected backend: <strong><?= htmlspecialchars(strtoupper($backend)) ?></strong></p>
-          <p>Service status: <span class="badge active"><?= htmlspecialchars($status) ?></span></p>
+          <p>Service status: <span class="badge active" data-live-service-status><?= htmlspecialchars($status) ?></span></p>
           <form method="post" action="/?r=service-action" style="display:flex; gap:8px; flex-wrap:wrap;">
             <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf) ?>">
             <button type="submit" name="action" value="start" class="alt">Start</button>
@@ -59,55 +66,72 @@
 
       <div class="card">
         <h3>Clients</h3>
-        <div class="table-wrap">
-        <table class="table">
-          <thead>
-            <tr><th>ID</th><th>Name</th><th>Internal IP</th><th>Status</th><th>Session</th><th>Last Seen</th><th>Traffic</th><th>Endpoint</th><th>Created</th><th>Actions</th></tr>
-          </thead>
-          <tbody>
-            <?php foreach ($clients as $c): ?>
-              <tr>
-                <td><?= (int)$c['id'] ?></td>
-                <td class="client-name-cell">
-                  <strong><?= htmlspecialchars($c['client_name']) ?></strong>
-                </td>
-                <td class="ip-cell">
-                  <?= nl2br(htmlspecialchars(str_replace(',', ",\n", (string)($c['assigned_ip'] ?? '')))) ?>
-                </td>
-                <td><span class="badge <?= $c['status'] === 'active' ? 'active' : 'disabled' ?>"><?= htmlspecialchars($c['status']) ?></span></td>
-                <td><span class="badge badge-session badge-session--<?= htmlspecialchars((string)($c['session_state'] ?? 'offline')) ?>"><?= htmlspecialchars((string)($c['session_state'] ?? 'offline')) ?></span></td>
-                <td class="date-cell"><?= htmlspecialchars((string)($c['last_seen'] !== '' ? $c['last_seen'] : '-')) ?></td>
-                <td class="traffic-cell">
-                  <div><span class="stat-label">Down</span><strong><?= htmlspecialchars($formatBytes($c['rx_bytes'] ?? 0)) ?></strong></div>
-                  <div><span class="stat-label">Up</span><strong><?= htmlspecialchars($formatBytes($c['tx_bytes'] ?? 0)) ?></strong></div>
-                </td>
-                <td class="endpoint-cell"><?= htmlspecialchars($formatMultiValue((string)($c['endpoint'] ?? ''))) ?></td>
-                <td class="date-cell"><?= htmlspecialchars($c['created_at']) ?></td>
-                <td class="actions-cell">
+        <div class="client-list" data-live-clients>
+          <?php foreach ($clients as $c): ?>
+            <article class="client-card" data-client-id="<?= (int)$c['id'] ?>">
+              <div class="client-card__header">
+                <div class="client-card__identity">
+                  <div class="client-card__title-row">
+                    <span class="client-card__id">#<?= (int)$c['id'] ?></span>
+                    <h4 class="client-card__name"><?= htmlspecialchars($c['client_name']) ?></h4>
+                  </div>
+                  <div class="client-card__badges">
+                    <span class="badge <?= $c['status'] === 'active' ? 'active' : 'disabled' ?>" data-field="status"><?= htmlspecialchars($c['status']) ?></span>
+                    <span class="badge badge-session badge-session--<?= htmlspecialchars((string)($c['session_state'] ?? 'offline')) ?>" data-field="session_state"><?= htmlspecialchars((string)($c['session_state'] ?? 'offline')) ?></span>
+                  </div>
+                </div>
+                <div class="client-card__actions">
                   <div class="action-links">
                     <a href="/?r=clients-download&id=<?= (int)$c['id'] ?>">Download</a>
-                  <?php if ($backend === 'wireguard'): ?>
-                    <a href="/?qr_id=<?= (int)$c['id'] ?>">QR</a>
-                  <?php endif; ?>
+                    <?php if ($backend === 'wireguard'): ?>
+                      <a href="/?qr_id=<?= (int)$c['id'] ?>">QR</a>
+                    <?php endif; ?>
                   </div>
                   <div class="action-buttons">
-                  <form method="post" action="/?r=clients-toggle" style="display:block;">
-                    <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf) ?>">
-                    <input type="hidden" name="id" value="<?= (int)$c['id'] ?>">
-                    <input type="hidden" name="to" value="<?= $c['status'] === 'active' ? 'disabled' : 'active' ?>">
-                    <button type="submit" class="alt"><?= $c['status'] === 'active' ? 'Disable' : 'Enable' ?></button>
-                  </form>
-                  <form method="post" action="/?r=clients-delete" style="display:block;">
-                    <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf) ?>">
-                    <input type="hidden" name="id" value="<?= (int)$c['id'] ?>">
-                    <button type="submit">Revoke</button>
-                  </form>
+                    <form method="post" action="/?r=clients-toggle">
+                      <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf) ?>">
+                      <input type="hidden" name="id" value="<?= (int)$c['id'] ?>">
+                      <input type="hidden" name="to" value="<?= $c['status'] === 'active' ? 'disabled' : 'active' ?>" data-toggle-target>
+                      <button type="submit" class="alt" data-toggle-button><?= $c['status'] === 'active' ? 'Disable' : 'Enable' ?></button>
+                    </form>
+                    <form method="post" action="/?r=clients-delete">
+                      <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf) ?>">
+                      <input type="hidden" name="id" value="<?= (int)$c['id'] ?>">
+                      <button type="submit">Revoke</button>
+                    </form>
                   </div>
-                </td>
-              </tr>
-            <?php endforeach; ?>
-          </tbody>
-        </table>
+                </div>
+              </div>
+
+              <div class="client-card__stats">
+                <div class="client-stat">
+                  <span class="client-stat__label">Internal IP</span>
+                  <span class="client-stat__value client-stat__value--break" data-field="assigned_ip"><?= nl2br(htmlspecialchars(str_replace(',', ",\n", (string)($c['assigned_ip'] ?? '')))) ?></span>
+                </div>
+                <div class="client-stat">
+                  <span class="client-stat__label">Last Seen</span>
+                  <span class="client-stat__value client-stat__value--mono" data-field="last_seen"><?= nl2br(htmlspecialchars($formatDate((string)($c['last_seen'] ?? '')))) ?></span>
+                </div>
+                <div class="client-stat">
+                  <span class="client-stat__label">Traffic</span>
+                  <span class="client-stat__value">
+                    <span class="traffic-inline">
+                      <span><small>Down</small><strong data-field="rx_bytes" data-bytes="<?= (int)($c['rx_bytes'] ?? 0) ?>"><?= htmlspecialchars($formatBytes($c['rx_bytes'] ?? 0)) ?></strong></span>
+                      <span><small>Up</small><strong data-field="tx_bytes" data-bytes="<?= (int)($c['tx_bytes'] ?? 0) ?>"><?= htmlspecialchars($formatBytes($c['tx_bytes'] ?? 0)) ?></strong></span>
+                    </span>
+                  </span>
+                </div>
+                <div class="client-stat">
+                  <span class="client-stat__label">Endpoint</span>
+                  <span class="client-stat__value client-stat__value--break" data-field="endpoint"><?= htmlspecialchars($formatMultiValue((string)($c['endpoint'] ?? ''))) ?></span>
+                </div>
+                <div class="client-stat">
+                  <span class="client-stat__label">Created</span>
+                  <span class="client-stat__value client-stat__value--mono"><?= nl2br(htmlspecialchars($formatDate((string)($c['created_at'] ?? '')))) ?></span>
+                </div>
+              </div>
+            </article>
+          <?php endforeach; ?>
         </div>
       </div>
 
@@ -142,5 +166,102 @@
       <a href="https://vps-up.online" target="_blank" rel="noopener noreferrer">vps-up.online</a>
     </div>
   </div>
+  <script>
+    (() => {
+      const clientsRoot = document.querySelector('[data-live-clients]');
+      if (!clientsRoot) return;
+
+      const serviceBadge = document.querySelector('[data-live-service-status]');
+
+      const formatBytes = (value) => {
+        const bytes = Number(value || 0);
+        if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+        const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const power = Math.max(0, Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1));
+        const scaled = bytes / (1024 ** power);
+        const precision = power === 0 ? 0 : 2;
+        return `${scaled.toFixed(precision)} ${units[power]}`;
+      };
+
+      const formatDate = (value) => {
+        if (!value) return '-';
+        return String(value).replace(' ', '\n');
+      };
+
+      const formatMultiValue = (value) => {
+        if (!value) return '-';
+        return String(value).split(',').join(', ');
+      };
+
+      const formatIp = (value) => {
+        if (!value) return '-';
+        return String(value).split(',').join(',\n');
+      };
+
+      const applyBadgeState = (badge, type, value) => {
+        badge.textContent = value;
+        if (type === 'status') {
+          badge.classList.toggle('active', value === 'active');
+          badge.classList.toggle('disabled', value !== 'active');
+          return;
+        }
+        badge.classList.remove('badge-session--online', 'badge-session--seen', 'badge-session--idle', 'badge-session--offline');
+        badge.classList.add(`badge-session--${value || 'offline'}`);
+      };
+
+      const updateClient = (card, client) => {
+        const statusBadge = card.querySelector('[data-field="status"]');
+        const sessionBadge = card.querySelector('[data-field="session_state"]');
+        const toggleTarget = card.querySelector('[data-toggle-target]');
+        const toggleButton = card.querySelector('[data-toggle-button]');
+        const assignedIp = card.querySelector('[data-field="assigned_ip"]');
+        const lastSeen = card.querySelector('[data-field="last_seen"]');
+        const endpoint = card.querySelector('[data-field="endpoint"]');
+        const rxBytes = card.querySelector('[data-field="rx_bytes"]');
+        const txBytes = card.querySelector('[data-field="tx_bytes"]');
+
+        if (statusBadge) applyBadgeState(statusBadge, 'status', client.status || 'disabled');
+        if (sessionBadge) applyBadgeState(sessionBadge, 'session', client.session_state || 'offline');
+        if (toggleTarget) toggleTarget.value = client.status === 'active' ? 'disabled' : 'active';
+        if (toggleButton) toggleButton.textContent = client.status === 'active' ? 'Disable' : 'Enable';
+        if (assignedIp) assignedIp.innerHTML = formatIp(client.assigned_ip || '-').replaceAll('\n', '<br>');
+        if (lastSeen) lastSeen.innerHTML = formatDate(client.last_seen || '').replaceAll('\n', '<br>');
+        if (endpoint) endpoint.textContent = formatMultiValue(client.endpoint || '');
+        if (rxBytes) {
+          rxBytes.dataset.bytes = String(client.rx_bytes || 0);
+          rxBytes.textContent = formatBytes(client.rx_bytes || 0);
+        }
+        if (txBytes) {
+          txBytes.dataset.bytes = String(client.tx_bytes || 0);
+          txBytes.textContent = formatBytes(client.tx_bytes || 0);
+        }
+      };
+
+      const poll = async () => {
+        try {
+          const response = await fetch('/?r=clients-live', { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
+          if (!response.ok) return;
+          const data = await response.json();
+
+          if (serviceBadge && typeof data.status === 'string') {
+            serviceBadge.textContent = data.status;
+          }
+
+          const clients = Array.isArray(data.clients) ? data.clients : [];
+          const map = new Map(clients.map((client) => [String(client.id), client]));
+          clientsRoot.querySelectorAll('[data-client-id]').forEach((card) => {
+            const client = map.get(card.getAttribute('data-client-id') || '');
+            if (client) {
+              updateClient(card, client);
+            }
+          });
+        } catch (error) {
+        }
+      };
+
+      poll();
+      window.setInterval(poll, 10000);
+    })();
+  </script>
 </body>
 </html>
