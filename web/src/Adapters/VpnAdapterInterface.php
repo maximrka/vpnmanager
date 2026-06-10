@@ -8,4 +8,5 @@ interface VpnAdapterInterface
 {
     public function serviceName(): string;
     public function status(): string;
+    public function clientSessions(): array;
 }

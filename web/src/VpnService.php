@@ -41,7 +41,22 @@ final class VpnService
     public function clients(): array
     {
         $stmt = $this->pdo->query('SELECT id, client_name, assigned_ip, external_id, status, created_at FROM vpn_clients ORDER BY id DESC');
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $clients = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $sessions = $this->adapter->clientSessions();
+
+        foreach ($clients as &$client) {
+            $externalId = (string)($client['external_id'] ?? '');
+            $session = $externalId !== '' ? ($sessions[$externalId] ?? null) : null;
+
+            $client['session_state'] = $session['session_state'] ?? 'offline';
+            $client['rx_bytes'] = $session['rx_bytes'] ?? 0;
+            $client['tx_bytes'] = $session['tx_bytes'] ?? 0;
+            $client['last_seen'] = $session['last_seen'] ?? '';
+            $client['endpoint'] = $session['endpoint'] ?? '';
+        }
+        unset($client);
+
+        return $clients;
     }
 
     public function createClient(string $name, int $userId): void
