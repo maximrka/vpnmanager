@@ -143,6 +143,7 @@ button.alt { background: #edf3fb; color: var(--text); }
   align-items: center;
   gap: 10px;
   margin-bottom: 10px;
+  flex-wrap: wrap;
 }
 .client-card__id {
   font-size: 12px;
@@ -157,28 +158,40 @@ button.alt { background: #edf3fb; color: var(--text); }
   font-size: 24px;
   line-height: 1.05;
 }
+.client-card__quick-links {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 4px;
+}
+.icon-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #f5f9ff;
+  color: var(--primary);
+  text-decoration: none;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.icon-link:hover {
+  background: #e9f2ff;
+  transform: translateY(-1px);
+}
 .client-card__badges {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 .client-card__actions {
-  width: 180px;
-  flex: 0 0 180px;
-}
-.action-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-.action-links a {
-  color: var(--primary);
-  text-decoration: none;
-  font-weight: 600;
-}
-.action-links a:hover {
-  text-decoration: underline;
+  width: 150px;
+  flex: 0 0 150px;
 }
 .action-buttons {
   display: grid;
