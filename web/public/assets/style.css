@@ -184,6 +184,10 @@ button.alt { background: #edf3fb; color: var(--text); }
   background: #e9f2ff;
   transform: translateY(-1px);
 }
+.icon-link--qr {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
 .client-card__badges {
   display: flex;
   flex-wrap: wrap;

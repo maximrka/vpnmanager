@@ -79,8 +79,8 @@
                         <span aria-hidden="true">↓</span>
                       </a>
                       <?php if ($backend === 'wireguard'): ?>
-                        <a href="/?r=clients-qr&id=<?= (int)$c['id'] ?>" class="icon-link" title="Show QR" aria-label="Show QR" data-qr-link data-client-name="<?= htmlspecialchars($c['client_name']) ?>">
-                          <span aria-hidden="true">⌁</span>
+                        <a href="/?r=clients-qr&id=<?= (int)$c['id'] ?>" class="icon-link icon-link--qr" title="Show QR" aria-label="Show QR" data-qr-link data-client-name="<?= htmlspecialchars($c['client_name']) ?>">
+                          <span aria-hidden="true">QR</span>
                         </a>
                       <?php endif; ?>
                     </div>
