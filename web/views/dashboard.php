@@ -20,6 +20,13 @@
         $precision = $power === 0 ? 0 : 2;
         return number_format($scaled, $precision, '.', ' ') . ' ' . $units[$power];
     };
+    $formatMultiValue = static function (?string $value): string {
+        $value = trim((string)$value);
+        if ($value === '') {
+            return '-';
+        }
+        return str_replace(',', ', ', $value);
+    };
   ?>
   <div class="layout">
     <?php include __DIR__ . '/_layout_top.php'; ?>
@@ -61,33 +68,41 @@
             <?php foreach ($clients as $c): ?>
               <tr>
                 <td><?= (int)$c['id'] ?></td>
-                <td><?= htmlspecialchars($c['client_name']) ?></td>
-                <td><?= htmlspecialchars((string)($c['assigned_ip'] ?? '')) ?></td>
+                <td class="client-name-cell">
+                  <strong><?= htmlspecialchars($c['client_name']) ?></strong>
+                </td>
+                <td class="ip-cell">
+                  <?= nl2br(htmlspecialchars(str_replace(',', ",\n", (string)($c['assigned_ip'] ?? '')))) ?>
+                </td>
                 <td><span class="badge <?= $c['status'] === 'active' ? 'active' : 'disabled' ?>"><?= htmlspecialchars($c['status']) ?></span></td>
                 <td><span class="badge badge-session badge-session--<?= htmlspecialchars((string)($c['session_state'] ?? 'offline')) ?>"><?= htmlspecialchars((string)($c['session_state'] ?? 'offline')) ?></span></td>
-                <td><?= htmlspecialchars((string)($c['last_seen'] !== '' ? $c['last_seen'] : '-')) ?></td>
+                <td class="date-cell"><?= htmlspecialchars((string)($c['last_seen'] !== '' ? $c['last_seen'] : '-')) ?></td>
                 <td class="traffic-cell">
-                  <div>Down: <strong><?= htmlspecialchars($formatBytes($c['rx_bytes'] ?? 0)) ?></strong></div>
-                  <div>Up: <strong><?= htmlspecialchars($formatBytes($c['tx_bytes'] ?? 0)) ?></strong></div>
+                  <div><span class="stat-label">Down</span><strong><?= htmlspecialchars($formatBytes($c['rx_bytes'] ?? 0)) ?></strong></div>
+                  <div><span class="stat-label">Up</span><strong><?= htmlspecialchars($formatBytes($c['tx_bytes'] ?? 0)) ?></strong></div>
                 </td>
-                <td class="endpoint-cell"><?= htmlspecialchars((string)($c['endpoint'] !== '' ? $c['endpoint'] : '-')) ?></td>
-                <td><?= htmlspecialchars($c['created_at']) ?></td>
-                <td>
-                  <a href="/?r=clients-download&id=<?= (int)$c['id'] ?>">Download</a>
+                <td class="endpoint-cell"><?= htmlspecialchars($formatMultiValue((string)($c['endpoint'] ?? ''))) ?></td>
+                <td class="date-cell"><?= htmlspecialchars($c['created_at']) ?></td>
+                <td class="actions-cell">
+                  <div class="action-links">
+                    <a href="/?r=clients-download&id=<?= (int)$c['id'] ?>">Download</a>
                   <?php if ($backend === 'wireguard'): ?>
-                    | <a href="/?qr_id=<?= (int)$c['id'] ?>">QR</a>
+                    <a href="/?qr_id=<?= (int)$c['id'] ?>">QR</a>
                   <?php endif; ?>
-                  | <form method="post" action="/?r=clients-toggle" style="display:inline-block; margin:0 4px;">
+                  </div>
+                  <div class="action-buttons">
+                  <form method="post" action="/?r=clients-toggle" style="display:block;">
                     <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf) ?>">
                     <input type="hidden" name="id" value="<?= (int)$c['id'] ?>">
                     <input type="hidden" name="to" value="<?= $c['status'] === 'active' ? 'disabled' : 'active' ?>">
                     <button type="submit" class="alt"><?= $c['status'] === 'active' ? 'Disable' : 'Enable' ?></button>
                   </form>
-                  <form method="post" action="/?r=clients-delete" style="display:inline-block;">
+                  <form method="post" action="/?r=clients-delete" style="display:block;">
                     <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf) ?>">
                     <input type="hidden" name="id" value="<?= (int)$c['id'] ?>">
                     <button type="submit">Revoke</button>
                   </form>
+                  </div>
                 </td>
               </tr>
             <?php endforeach; ?>

@@ -35,6 +35,7 @@ Useful environment variables:
 - `WG_HOST` - optional public IP or DNS placed into generated client configs
 - `WG_PORT` - WireGuard UDP port
 - `APACHE_PORT` - web panel port inside the container; keep it aligned with `ports:`
+- `APP_SECRET` - optional fixed app secret for stable encrypted 2FA data across container recreation
 - `WG_ENABLE_IPV6` - `auto`, `1`, or `0`
 - `ADMIN_PASSWORD` - optional fixed initial admin password
 - `APP_NAME` - panel title
@@ -53,6 +54,7 @@ Current limitations:
 - WireGuard only, no OpenVPN in this Docker mode yet
 - IPv6 in Docker mode depends on Docker host/network support and may need extra tuning
 - first start initializes the database and admin user automatically
+- generated app secret is persisted in `/opt/vpnweb/var/runtime.env`, so TOTP 2FA survives container recreation
 - if you change core network settings later, the easiest path is recreating the container with persisted volumes kept intentionally
 - auto-detection of public IP tries an external lookup first; if it is wrong, set `WG_HOST` manually in `docker-compose.yml`
 

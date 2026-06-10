@@ -6,6 +6,7 @@ VAR_DIR="${APP_ROOT}/var"
 DB_PATH="${VAR_DIR}/vpnweb.sqlite"
 QR_DIR="${VAR_DIR}/qr"
 ENV_PATH="${APP_ROOT}/.env"
+PERSIST_ENV_PATH="${VAR_DIR}/runtime.env"
 WG_CONF="/etc/wireguard/wg0.conf"
 ADMIN_FILE="${VAR_DIR}/initial-admin.txt"
 
@@ -98,7 +99,11 @@ initialize_web() {
   chown -R www-data:www-data "${VAR_DIR}"
   chmod 750 "${VAR_DIR}"
 
-  if [[ -f "${ENV_PATH}" ]]; then
+  app_secret="${APP_SECRET:-}"
+  if [[ -z "${app_secret}" && -f "${PERSIST_ENV_PATH}" ]]; then
+    app_secret="$(sed -n 's/^APP_SECRET=//p' "${PERSIST_ENV_PATH}" | head -n1 || true)"
+  fi
+  if [[ -z "${app_secret}" && -f "${ENV_PATH}" ]]; then
     app_secret="$(sed -n 's/^APP_SECRET=//p' "${ENV_PATH}" | head -n1 || true)"
   fi
   if [[ -z "${app_secret:-}" ]]; then
@@ -109,7 +114,7 @@ initialize_web() {
   ipv6_enabled="$(ipv6_mode)"
   wg_port="${WG_PORT:-51820}"
 
-  cat > "${ENV_PATH}" <<ENV
+  cat > "${PERSIST_ENV_PATH}" <<ENV
 APP_ENV=production
 APP_NAME=${APP_NAME:-VPN Web Panel}
 APP_LOGO_TEXT=${APP_LOGO_TEXT:-VPNWEB}
@@ -122,6 +127,9 @@ VPNWEB_ENDPOINT_HOST=${endpoint_host}
 WG_PORT=${wg_port}
 WG_ENABLE_IPV6=${ipv6_enabled}
 ENV
+  cp "${PERSIST_ENV_PATH}" "${ENV_PATH}"
+  chown www-data:www-data "${PERSIST_ENV_PATH}"
+  chmod 640 "${PERSIST_ENV_PATH}"
 
   if [[ ! -f "${DB_PATH}" ]]; then
     sqlite3 "${DB_PATH}" < "${APP_ROOT}/schema.sql"
