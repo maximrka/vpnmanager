@@ -81,6 +81,10 @@ final class App
             $this->downloadClientConfig();
             return;
         }
+        if ($route === 'clients-live') {
+            $this->clientsLive();
+            return;
+        }
         $this->dashboardPage();
     }
 
@@ -202,6 +206,16 @@ final class App
             'selectedQr' => $selectedQr,
             'selectedQrName' => $selectedQrName,
         ]);
+    }
+
+    private function clientsLive(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'status' => $this->vpn->serviceStatus(),
+            'clients' => $this->vpn->clients(),
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        exit;
     }
 
     private function profilePage(): void
