@@ -18,7 +18,7 @@ services:
       APP_SECRET: ""
       WG_PORT: "51820"
       WG_HOST: ""
-      WG_ENABLE_IPV6: "auto"
+      WG_ENABLE_IPV6: "1"
       ADMIN_PASSWORD: ""
       APP_NAME: "VPN Web Panel"
       APP_LOGO_TEXT: "VPNWEB"
