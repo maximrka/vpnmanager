@@ -74,6 +74,16 @@
                   <div class="client-card__title-row">
                     <span class="client-card__id">#<?= (int)$c['id'] ?></span>
                     <h4 class="client-card__name"><?= htmlspecialchars($c['client_name']) ?></h4>
+                    <div class="client-card__quick-links">
+                      <a href="/?r=clients-download&id=<?= (int)$c['id'] ?>" class="icon-link" title="Download config" aria-label="Download config">
+                        <span aria-hidden="true">↓</span>
+                      </a>
+                      <?php if ($backend === 'wireguard'): ?>
+                        <a href="/?r=clients-qr&id=<?= (int)$c['id'] ?>" class="icon-link" title="Show QR" aria-label="Show QR" data-qr-link data-client-name="<?= htmlspecialchars($c['client_name']) ?>">
+                          <span aria-hidden="true">⌁</span>
+                        </a>
+                      <?php endif; ?>
+                    </div>
                   </div>
                   <div class="client-card__badges">
                     <span class="badge <?= $c['status'] === 'active' ? 'active' : 'disabled' ?>" data-field="status"><?= htmlspecialchars($c['status']) ?></span>
@@ -81,12 +91,6 @@
                   </div>
                 </div>
                 <div class="client-card__actions">
-                  <div class="action-links">
-                    <a href="/?r=clients-download&id=<?= (int)$c['id'] ?>">Download</a>
-                    <?php if ($backend === 'wireguard'): ?>
-                      <a href="/?r=clients-qr&id=<?= (int)$c['id'] ?>" data-qr-link data-client-name="<?= htmlspecialchars($c['client_name']) ?>">QR</a>
-                    <?php endif; ?>
-                  </div>
                   <div class="action-buttons">
                     <form method="post" action="/?r=clients-toggle">
                       <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf) ?>">
