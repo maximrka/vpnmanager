@@ -81,6 +81,10 @@ final class App
             $this->downloadClientConfig();
             return;
         }
+        if ($route === 'clients-qr') {
+            $this->clientQr();
+            return;
+        }
         if ($route === 'clients-live') {
             $this->clientsLive();
             return;
@@ -182,18 +186,6 @@ final class App
 
     private function dashboardPage(): void
     {
-        $selectedQr = null;
-        $selectedQrName = null;
-        if ($this->vpn->backend() === 'wireguard' && isset($_GET['qr_id'])) {
-            try {
-                $cfg = $this->vpn->getClientConfig((int)$_GET['qr_id']);
-                $selectedQr = $this->qrDataUri($cfg['content']);
-                $selectedQrName = $cfg['name'];
-            } catch (RuntimeException $e) {
-                $_SESSION['flash_err'] = 'QR unavailable for this client';
-            }
-        }
-
         View::render('dashboard', [
             'appName' => $this->config->get('APP_NAME', 'VPN Web Panel'),
             'logoText' => $this->config->get('APP_LOGO_TEXT', 'VPNWEB'),
@@ -203,8 +195,6 @@ final class App
             'csrf' => Csrf::token(),
             'audit' => $this->audit->last(10),
             'username' => $_SESSION['username'] ?? 'admin',
-            'selectedQr' => $selectedQr,
-            'selectedQrName' => $selectedQrName,
         ]);
     }
 
@@ -213,9 +203,40 @@ final class App
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode([
             'status' => $this->vpn->serviceStatus(),
+            'server_time' => time(),
             'clients' => $this->vpn->clients(),
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         exit;
+    }
+
+    private function clientQr(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+        if ($this->vpn->backend() !== 'wireguard') {
+            http_response_code(404);
+            echo json_encode(['error' => 'QR unavailable'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            exit;
+        }
+
+        $id = (int)($_GET['id'] ?? 0);
+        try {
+            $cfg = $this->vpn->getClientConfig($id);
+            $qrData = $this->qrDataUri($cfg['content']);
+            if ($qrData === null) {
+                throw new RuntimeException('qr unavailable');
+            }
+            $this->audit->log($this->auth->userId(), 'client.qr', 'ok', ['target_id' => (string)$id]);
+            echo json_encode([
+                'name' => $cfg['name'],
+                'qr_data' => $qrData,
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            exit;
+        } catch (RuntimeException $e) {
+            $this->audit->log($this->auth->userId(), 'client.qr', 'fail', ['target_id' => (string)$id]);
+            http_response_code(404);
+            echo json_encode(['error' => 'QR unavailable'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            exit;
+        }
     }
 
     private function profilePage(): void
